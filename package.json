@@ -1,0 +1,27 @@
+{
+  "name": "hook-line-sinker",
+  "version": "1.0.0",
+  "description": "GitHub webhook monitoring service",
+  "main": "hls.js",
+  "scripts": {
+    "start": "node hls.js",
+    "pm2": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop hls",
+    "restart": "pm2 restart hls",
+    "logs": "pm2 logs hls"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "handlebars": "^4.7.8",
+    "sqlite3": "^5.1.6",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "keywords": [
+    "webhook",
+    "github",
+    "monitoring"
+  ],
+  "author": "",
+  "license": "MIT"
+}

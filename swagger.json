@@ -1,0 +1,952 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hook Line Sinker (HLS) API",
+    "description": "GitHub webhook monitoring service with Claude AI integration for automated repository analysis and management. Universal @clide auto-execution for zpaper-com and shawn-storie organizations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hook Line Sinker",
+      "url": "https://hls.zpaper.com/"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/zpaper-com/hook-line-sinker/blob/main/LICENSE"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://hls.zpaper.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:4665",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Webhooks",
+      "description": "GitHub webhook data management"
+    },
+    {
+      "name": "Claude AI",
+      "description": "Claude AI integration and execution"
+    },
+    {
+      "name": "Prompts",
+      "description": "Prompt template management"
+    },
+    {
+      "name": "Health",
+      "description": "Service health and monitoring"
+    },
+    {
+      "name": "UI",
+      "description": "Web interface endpoints"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check endpoint",
+        "description": "Returns service health status and uptime information",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2025-07-17T03:00:00.000Z"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "example": 123.456
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "GitHub webhook endpoint",
+        "description": "Receives GitHub webhook events and processes them with Claude AI integration",
+        "parameters": [
+          {
+            "name": "X-GitHub-Event",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "GitHub event type"
+          },
+          {
+            "name": "X-GitHub-Delivery",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique delivery ID"
+          },
+          {
+            "name": "X-Hub-Signature-256",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "HMAC signature for verification"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "GitHub webhook payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Webhook received and processed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid signature or payload"
+          }
+        }
+      }
+    },
+    "/api/webhooks": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "List all webhooks",
+        "description": "Returns a paginated list of webhook events, sorted by most recent first",
+        "parameters": [
+          {
+            "name": "repository",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by repository name"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by event type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of webhooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Webhook"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/{id}": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "Get specific webhook",
+        "description": "Returns detailed information for a specific webhook event",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDetailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Webhooks"],
+        "summary": "Delete webhook",
+        "description": "Removes a webhook event from the database",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Webhook deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found"
+          }
+        }
+      }
+    },
+    "/api/webhooks/{id}/payload": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "Get raw webhook payload",
+        "description": "Returns the raw JSON payload for analysis and debugging",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Raw webhook payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Raw GitHub webhook payload"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found"
+          }
+        }
+      }
+    },
+    "/api/parsed-prompts": {
+      "get": {
+        "tags": ["Claude AI"],
+        "summary": "List parsed prompts",
+        "description": "Returns all parsed prompts with optional filtering",
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by webhook ID"
+          },
+          {
+            "name": "repository",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by repository"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by event type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of parsed prompts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParsedPrompt"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/parsed-prompts/{id}": {
+      "get": {
+        "tags": ["Claude AI"],
+        "summary": "Get specific parsed prompt",
+        "description": "Returns detailed information for a specific parsed prompt including webhook data",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Parsed prompt ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parsed prompt details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParsedPromptDetailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Parsed prompt not found"
+          }
+        }
+      }
+    },
+    "/api/claude-responses/{promptId}": {
+      "get": {
+        "tags": ["Claude AI"],
+        "summary": "Get Claude response",
+        "description": "Returns the Claude AI response for a specific prompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Parsed prompt ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claude response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaudeResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Claude response found for this prompt"
+          }
+        }
+      }
+    },
+    "/api/claude-execute/{id}": {
+      "post": {
+        "tags": ["Claude AI"],
+        "summary": "Execute Claude analysis",
+        "description": "Manually triggers Claude analysis for a parsed prompt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Parsed prompt ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claude execution successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "output": {
+                      "type": "string",
+                      "example": "## Actions Taken..."
+                    },
+                    "execution_time": {
+                      "type": "integer",
+                      "example": 65432
+                    },
+                    "repository": {
+                      "type": "string",
+                      "example": "zpaper-com/patient-sprkz"
+                    },
+                    "event_type": {
+                      "type": "string",
+                      "example": "issues"
+                    },
+                    "prompt_id": {
+                      "type": "integer",
+                      "example": 11
+                    },
+                    "webhook_id": {
+                      "type": "integer",
+                      "example": 21
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Claude execution failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Claude execution failed"
+                    },
+                    "exit_code": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "stderr": {
+                      "type": "string",
+                      "example": "Error message..."
+                    },
+                    "execution_time": {
+                      "type": "integer",
+                      "example": 1234
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompts": {
+      "get": {
+        "tags": ["Prompts"],
+        "summary": "List available prompts",
+        "description": "Returns all available prompt templates organized by type",
+        "responses": {
+          "200": {
+            "description": "Available prompt templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generic": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "example": {
+                        "issues": "# Issues Event Prompt...",
+                        "pull_request": "# Pull Request Event Prompt..."
+                      }
+                    },
+                    "repos": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "example": {
+                        "shawn-storie/HookHaven": {
+                          "issues": "# Custom HookHaven Issues Prompt..."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompts/generic/{eventType}": {
+      "get": {
+        "tags": ["Prompts"],
+        "summary": "Get generic prompt template",
+        "description": "Returns a specific generic prompt template",
+        "parameters": [
+          {
+            "name": "eventType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event type (issues, pull_request, push, etc.)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prompt template content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "# Issues Event Prompt\n\nAnalyze the following issue event..."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt template not found"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Prompts"],
+        "summary": "Save generic prompt template",
+        "description": "Saves or updates a generic prompt template",
+        "parameters": [
+          {
+            "name": "eventType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event type"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "# Updated Issues Event Prompt\n\nAnalyze the following issue event..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prompt template saved successfully"
+          }
+        }
+      }
+    },
+    "/api/prompts/repo/{repo}/{eventType}": {
+      "get": {
+        "tags": ["Prompts"],
+        "summary": "Get repository-specific prompt",
+        "description": "Returns a repository-specific prompt template",
+        "parameters": [
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Repository name (URL encoded)"
+          },
+          {
+            "name": "eventType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository-specific prompt template",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt template not found"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Prompts"],
+        "summary": "Save repository-specific prompt",
+        "description": "Saves or updates a repository-specific prompt template",
+        "parameters": [
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Repository name (URL encoded)"
+          },
+          {
+            "name": "eventType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event type"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository-specific prompt saved successfully"
+          }
+        }
+      }
+    },
+    "/api/repositories": {
+      "get": {
+        "tags": ["Prompts"],
+        "summary": "List repositories",
+        "description": "Returns available repositories from GitHub CLI",
+        "responses": {
+          "200": {
+            "description": "List of repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "shawn-storie/HookHaven",
+                    "zpaper-com/patient-sprkz",
+                    "zpaper-com/agents"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": ["UI"],
+        "summary": "Main dashboard",
+        "description": "Returns the main webhook monitoring interface",
+        "responses": {
+          "200": {
+            "description": "HTML dashboard",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "tags": ["UI"],
+        "summary": "Events documentation",
+        "description": "Returns comprehensive GitHub events reference page",
+        "responses": {
+          "200": {
+            "description": "HTML events documentation",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prompts": {
+      "get": {
+        "tags": ["UI"],
+        "summary": "Prompt management interface",
+        "description": "Returns Monaco editor interface for prompt template management",
+        "responses": {
+          "200": {
+            "description": "HTML prompt management interface",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 22
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-07-17T03:14:04"
+          },
+          "event_type": {
+            "type": "string",
+            "example": "issue_comment"
+          },
+          "action": {
+            "type": "string",
+            "example": "created"
+          },
+          "delivery_id": {
+            "type": "string",
+            "example": "172d3de0-62bc-11f0-878a-6edd72b6346e"
+          },
+          "signature": {
+            "type": "string",
+            "example": "sha256=..."
+          },
+          "payload": {
+            "type": "string",
+            "description": "JSON string of the webhook payload"
+          },
+          "sender_login": {
+            "type": "string",
+            "example": "shawn-storie"
+          },
+          "sender_id": {
+            "type": "integer",
+            "example": 12345
+          },
+          "repository": {
+            "type": "string",
+            "example": "shawn-storie/HookHaven"
+          },
+          "verified": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "WebhookDetailed": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Webhook"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "description": "Parsed webhook payload object"
+              }
+            }
+          }
+        ]
+      },
+      "ParsedPrompt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 11
+          },
+          "webhook_id": {
+            "type": "integer",
+            "example": 21
+          },
+          "repository": {
+            "type": "string",
+            "example": "zpaper-com/patient-sprkz"
+          },
+          "event_type": {
+            "type": "string",
+            "example": "issues"
+          },
+          "prompt_template": {
+            "type": "string",
+            "example": "# Issues Event Prompt..."
+          },
+          "parsed_content": {
+            "type": "string",
+            "example": "# Issues Event Prompt\n\n## Repository: zpaper-com/patient-sprkz..."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-07-17T03:34:45"
+          }
+        }
+      },
+      "ParsedPromptDetailed": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ParsedPrompt"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "webhook_timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2025-07-17T03:34:45"
+              },
+              "delivery_id": {
+                "type": "string",
+                "example": "fb413598-62be-11f0-8ec7-1c53d2a7ab15"
+              },
+              "sender_login": {
+                "type": "string",
+                "example": "shawn-storie"
+              },
+              "payload": {
+                "type": "string",
+                "description": "JSON string of the webhook payload"
+              }
+            }
+          }
+        ]
+      },
+      "ClaudeResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 6
+          },
+          "prompt_id": {
+            "type": "integer",
+            "example": 11
+          },
+          "response_content": {
+            "type": "string",
+            "example": "Based on the GitHub issue event analysis:\n\n## Issue Analysis..."
+          },
+          "execution_time": {
+            "type": "integer",
+            "description": "Execution time in milliseconds",
+            "example": 88647
+          },
+          "exit_code": {
+            "type": "integer",
+            "example": 0
+          },
+          "error_message": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-07-17T03:36:14"
+          }
+        }
+      }
+    }
+  }
+}
