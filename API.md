@@ -4,7 +4,7 @@ Complete API reference for the GitHub webhook monitoring service with Claude AI 
 
 ## 🌐 Base URL
 
-- **Production**: `https://hls.zpaper.com`
+- **Production**: `https://hls.clidecoder.com`
 - **Local Development**: `http://localhost:4665`
 
 ## 📊 Webhook Data API
@@ -36,13 +36,13 @@ Returns a paginated list of webhook events, sorted by most recent first.
 #### Example Usage
 ```bash
 # Get all webhooks
-curl https://hls.zpaper.com/api/webhooks
+curl https://hls.clidecoder.com/api/webhooks
 
 # Filter by repository (query parameter)
-curl "https://hls.zpaper.com/api/webhooks?repository=zpaper-com/patient-sprkz"
+curl "https://hls.clidecoder.com/api/webhooks?repository=zpaper-com/patient-sprkz"
 
 # Get specific event types
-curl "https://hls.zpaper.com/api/webhooks?event_type=issues"
+curl "https://hls.clidecoder.com/api/webhooks?event_type=issues"
 ```
 
 ### Get Specific Webhook
@@ -271,7 +271,7 @@ Saves or updates a repository-specific prompt template.
 #### Example
 ```bash
 # Save custom issues prompt for patient-sprkz
-curl -X POST "https://hls.zpaper.com/api/prompts/repo/zpaper-com%2Fpatient-sprkz/issues" \
+curl -X POST "https://hls.clidecoder.com/api/prompts/repo/zpaper-com%2Fpatient-sprkz/issues" \
   -H "Content-Type: text/plain" \
   -d "# Custom Patient-SPRKZ Issues Prompt..."
 ```
@@ -338,7 +338,7 @@ All webhook endpoints validate GitHub signatures using HMAC-SHA256:
 
 ```bash
 # Example webhook call with signature
-curl -X POST https://hls.zpaper.com/webhook \
+curl -X POST https://hls.clidecoder.com/webhook \
   -H "X-GitHub-Event: issues" \
   -H "X-GitHub-Delivery: unique-delivery-id" \
   -H "X-Hub-Signature-256: sha256=signature" \
@@ -355,31 +355,31 @@ curl -X POST https://hls.zpaper.com/webhook \
 ### Monitor Webhook Activity
 ```bash
 # Get recent webhooks
-curl -s https://hls.zpaper.com/api/webhooks | jq '.[0:5]'
+curl -s https://hls.clidecoder.com/api/webhooks | jq '.[0:5]'
 
 # Check for specific repository activity
-curl -s "https://hls.zpaper.com/api/webhooks?repository=zpaper-com/patient-sprkz" | jq 'length'
+curl -s "https://hls.clidecoder.com/api/webhooks?repository=zpaper-com/patient-sprkz" | jq 'length'
 
 # Get Claude analysis results
-curl -s https://hls.zpaper.com/api/parsed-prompts | jq '.[] | {id, repository, event_type, created_at}'
+curl -s https://hls.clidecoder.com/api/parsed-prompts | jq '.[] | {id, repository, event_type, created_at}'
 ```
 
 ### Trigger Manual Analysis
 ```bash
 # Get latest parsed prompt
-PROMPT_ID=$(curl -s https://hls.zpaper.com/api/parsed-prompts | jq -r '.[0].id')
+PROMPT_ID=$(curl -s https://hls.clidecoder.com/api/parsed-prompts | jq -r '.[0].id')
 
 # Execute Claude analysis
-curl -X POST https://hls.zpaper.com/api/claude-execute/$PROMPT_ID
+curl -X POST https://hls.clidecoder.com/api/claude-execute/$PROMPT_ID
 ```
 
 ### Manage Prompt Templates
 ```bash
 # Download current issues template
-curl https://hls.zpaper.com/api/prompts/generic/issues > issues_template.md
+curl https://hls.clidecoder.com/api/prompts/generic/issues > issues_template.md
 
 # Upload modified template
-curl -X POST https://hls.zpaper.com/api/prompts/generic/issues \
+curl -X POST https://hls.clidecoder.com/api/prompts/generic/issues \
   -H "Content-Type: text/plain" \
   --data-binary @issues_template.md
 ```

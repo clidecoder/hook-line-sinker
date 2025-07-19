@@ -2,20 +2,20 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Hook Line Sinker (HLS) API",
-    "description": "GitHub webhook monitoring service with Claude AI integration for automated repository analysis and management. Universal @clide auto-execution for zpaper-com and shawn-storie organizations.",
+    "description": "GitHub webhook monitoring service with Claude AI integration for automated repository analysis and management. Universal @clide auto-execution for clidecoder and shawn-storie organizations.",
     "version": "1.0.0",
     "contact": {
       "name": "Hook Line Sinker",
-      "url": "https://hls.zpaper.com/"
+      "url": "https://hls.clidecoder.com/"
     },
     "license": {
       "name": "MIT",
-      "url": "https://github.com/zpaper-com/hook-line-sinker/blob/main/LICENSE"
+      "url": "https://github.com/clidecoder/hook-line-sinker/blob/main/LICENSE"
     }
   },
   "servers": [
     {
-      "url": "https://hls.zpaper.com",
+      "url": "https://hls.clidecoder.com",
       "description": "Production server"
     },
     {

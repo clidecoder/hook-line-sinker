@@ -1,15 +1,15 @@
 # Hook Line Sinker (HLS) 🎣
 
-A comprehensive GitHub webhook monitoring service with Claude AI integration for automated repository analysis and management. Built for zpaper-com and shawn-storie organizations with universal @clide auto-execution.
+A comprehensive GitHub webhook monitoring service with Claude AI integration for automated repository analysis and management. Built for clidecoder and shawn-storie organizations with universal @clide auto-execution.
 
 ## 🌐 Live Service
 
-- **Web Interface**: https://hls.zpaper.com/
-- **Webhook Endpoint**: https://hls.zpaper.com/webhook
-- **Health Check**: https://hls.zpaper.com/health
-- **API Documentation**: https://hls.zpaper.com/api-docs
-- **Events Documentation**: https://hls.zpaper.com/events
-- **Prompt Management**: https://hls.zpaper.com/prompts
+- **Web Interface**: https://hls.clidecoder.com/
+- **Webhook Endpoint**: https://hls.clidecoder.com/webhook
+- **Health Check**: https://hls.clidecoder.com/health
+- **API Documentation**: https://hls.clidecoder.com/api-docs
+- **Events Documentation**: https://hls.clidecoder.com/events
+- **Prompt Management**: https://hls.clidecoder.com/prompts
 
 ## ✨ Features
 
@@ -54,7 +54,7 @@ A comprehensive GitHub webhook monitoring service with Claude AI integration for
 
 1. Go to your repository settings → Webhooks
 2. Add webhook with these settings:
-   - **Payload URL**: `https://hls.zpaper.com/webhook`
+   - **Payload URL**: `https://hls.clidecoder.com/webhook`
    - **Content Type**: `application/json`
    - **Secret**: `0eafeebff81353f861742e1391ba371f045d1fbc586f9033f8e789954c7c9733`
    - **Events**: Select "Send me everything" or specific events

@@ -239,7 +239,7 @@ async function main() {
       console.log('   6. ✅ Claude analysis stored in database');
       console.log('');
       console.log('💡 Check the HLS logs with: pm2 logs hls --lines 20');
-      console.log('💡 View results at: https://hls.zpaper.com/ or http://localhost:4665/');
+      console.log('💡 View results at: https://hls.clidecoder.com/ or http://localhost:4665/');
     } else {
       console.log('ℹ️  This issue does not contain @clide tag, so Claude will not auto-execute');
       console.log('💡 Manual execution available through the web interface');
@@ -263,7 +263,7 @@ Arguments:
 Examples:
   node test-issue-webhook.js                                    # Test issue #1 on localhost
   node test-issue-webhook.js 5                                  # Test issue #5 on localhost  
-  node test-issue-webhook.js 1 https://hls.zpaper.com/webhook   # Test issue #1 on production
+  node test-issue-webhook.js 1 https://hls.clidecoder.com/webhook   # Test issue #1 on production
   
 This script:
 1. Fetches a real issue from the HookHaven repository

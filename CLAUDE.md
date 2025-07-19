@@ -16,10 +16,10 @@ Hook Line Sinker (HLS) is a Node.js-based GitHub webhook monitoring service that
 
 ## Service URLs
 
-- **Production Web Interface**: https://hls.zpaper.com/
-- **Webhook Endpoint**: https://hls.zpaper.com/webhook
-- **Health Check**: https://hls.zpaper.com/health
-- **API Documentation**: https://hls.zpaper.com/api-docs
+- **Production Web Interface**: https://hls.clidecoder.com/
+- **Webhook Endpoint**: https://hls.clidecoder.com/webhook
+- **Health Check**: https://hls.clidecoder.com/health
+- **API Documentation**: https://hls.clidecoder.com/api-docs
 - **Local Development**: http://localhost:4665/
 
 ## Running the Application
@@ -175,7 +175,7 @@ Use the following secret for GitHub webhook configuration:
 - **Database**: SQLite with 22+ webhook records and 6 Claude responses
 - **GitHub CLI**: Authenticated and working with dangerous permissions
 - **Webhook Secret**: Configured for organization-level webhooks
-- **External Access**: Available at https://hls.zpaper.com/
+- **External Access**: Available at https://hls.clidecoder.com/
 
 ## Development Notes
 

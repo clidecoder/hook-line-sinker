@@ -71,7 +71,7 @@ async function main() {
       
       console.log('🌐 View Full Results:');
       console.log(`   Web Interface: http://localhost:4665/`);
-      console.log(`   Production: https://hls.zpaper.com/`);
+      console.log(`   Production: https://hls.clidecoder.com/`);
       console.log(`   Direct Response: http://localhost:4665/api/claude-responses/${latestPrompt.id}`);
       
     } catch (err) {

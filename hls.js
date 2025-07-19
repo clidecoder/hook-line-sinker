@@ -451,10 +451,10 @@ app.get('/api/repositories', async (req, res) => {
   try {
     const { exec } = require('child_process');
     
-    // Get both user repos and zpaper-com organization repos
+    // Get both user repos and clidecoder organization repos
     const commands = [
       'gh repo list --limit 100 --json name,owner',
-      'gh repo list zpaper-com --limit 100 --json name,owner'
+      'gh repo list clidecoder --limit 100 --json name,owner'
     ];
     
     let allRepos = [];
@@ -2774,7 +2774,7 @@ app.get('/', (req, res) => {
             <div style="margin-bottom: 2rem;">
                 <h3>🏢 Organization-Level Webhook (Recommended)</h3>
                 <div style="background: rgba(31, 111, 235, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(31, 111, 235, 0.3); margin-bottom: 1rem;">
-                    <p style="margin: 0; color: #58a6ff;"><strong>Best for:</strong> zpaper-com and shawn-storie organizations - covers ALL repositories automatically</p>
+                    <p style="margin: 0; color: #58a6ff;"><strong>Best for:</strong> clidecoder and shawn-storie organizations - covers ALL repositories automatically</p>
                 </div>
                 <ol style="margin-left: 1.5rem;">
                     <li>Go to your GitHub organization page</li>

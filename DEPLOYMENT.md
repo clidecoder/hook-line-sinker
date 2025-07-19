@@ -5,7 +5,7 @@ Complete deployment guide for the GitHub webhook monitoring service with Claude 
 ## 🎯 Production Deployment
 
 ### Current Live Environment
-- **URL**: https://hls.zpaper.com/
+- **URL**: https://hls.clidecoder.com/
 - **Server**: AWS EC2 instance
 - **Process Manager**: PM2
 - **Port**: 4665 (internal), proxied via nginx/ALB
@@ -109,7 +109,7 @@ pm2 logs hls --lines 20
 #### Organization-Level Webhook (Recommended)
 1. Go to GitHub Organization Settings → Webhooks
 2. Add webhook with these settings:
-   - **Payload URL**: `https://hls.zpaper.com/webhook`
+   - **Payload URL**: `https://hls.clidecoder.com/webhook`
    - **Content Type**: `application/json`
    - **Secret**: `0eafeebff81353f861742e1391ba371f045d1fbc586f9033f8e789954c7c9733`
    - **Events**: Select "Send me everything"
@@ -126,7 +126,7 @@ pm2 logs hls --lines 20
 ```nginx
 server {
     listen 80;
-    server_name hls.zpaper.com;
+    server_name hls.clidecoder.com;
     
     location / {
         proxy_pass http://localhost:4665;
@@ -200,7 +200,7 @@ pm2 flush  # Clear all logs
 ### Health Checks
 ```bash
 # Application health
-curl https://hls.zpaper.com/health
+curl https://hls.clidecoder.com/health
 
 # Expected response:
 # {"status":"ok","timestamp":"2025-07-17T03:00:00.000Z","uptime":123.456}
@@ -220,13 +220,13 @@ free -h
 ### Database Monitoring
 ```bash
 # Webhook count
-curl -s https://hls.zpaper.com/api/webhooks | jq 'length'
+curl -s https://hls.clidecoder.com/api/webhooks | jq 'length'
 
 # Recent webhooks
-curl -s https://hls.zpaper.com/api/webhooks | jq '.[0:5] | .[] | {id, event_type, repository, timestamp}'
+curl -s https://hls.clidecoder.com/api/webhooks | jq '.[0:5] | .[] | {id, event_type, repository, timestamp}'
 
 # Claude responses
-curl -s https://hls.zpaper.com/api/parsed-prompts | jq 'length'
+curl -s https://hls.clidecoder.com/api/parsed-prompts | jq 'length'
 ```
 
 ## 🔄 Updates and Maintenance
@@ -243,7 +243,7 @@ npm install
 pm2 restart hls
 
 # Verify deployment
-curl https://hls.zpaper.com/health
+curl https://hls.clidecoder.com/health
 ```
 
 ### Database Maintenance
@@ -283,7 +283,7 @@ pm2 env 0  # Replace 0 with actual PM2 process ID
 echo $GITHUB_WEBHOOK_SECRET
 
 # Test webhook endpoint
-curl -X POST https://hls.zpaper.com/webhook \
+curl -X POST https://hls.clidecoder.com/webhook \
   -H "Content-Type: application/json" \
   -d '{"test": true}'
 ```
@@ -352,9 +352,9 @@ pm2 logs hls | grep "execution_time\|Auto-executed"
 - **Prompts**: `prompts/generic/`, `prompts/repos/`
 
 ### Important URLs
-- **Web Interface**: https://hls.zpaper.com/
-- **Health Check**: https://hls.zpaper.com/health
-- **API Docs**: https://hls.zpaper.com/events
-- **Prompt Management**: https://hls.zpaper.com/prompts
+- **Web Interface**: https://hls.clidecoder.com/
+- **Health Check**: https://hls.clidecoder.com/health
+- **API Docs**: https://hls.clidecoder.com/events
+- **Prompt Management**: https://hls.clidecoder.com/prompts
 
 This deployment has been tested and verified with live webhook processing for both shawn-storie and zpaper-com organizations.
