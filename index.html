@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook Line Sinker - GitHub Webhook Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-dark.min.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+            border-radius: 1rem;
+            box-shadow: 0 8px 24px rgba(31, 111, 235, 0.2);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .webhook-url {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            color: #58a6ff;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: #161b22;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #30363d;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        
+        .webhook-list {
+            background: #161b22;
+            border-radius: 0.5rem;
+            border: 1px solid #30363d;
+            overflow: hidden;
+        }
+        
+        .webhook-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #30363d;
+            transition: background 0.2s;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .webhook-item:hover {
+            background: #1c2128;
+        }
+        
+        .event-badge {
+            background: #1f6feb;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .event-badge.push { background: #2ea043; }
+        .event-badge.pull_request { background: #8957e5; }
+        .event-badge.issues { background: #da3633; }
+        .event-badge.release { background: #f0883e; }
+        
+        .webhook-info {
+            flex: 1;
+        }
+        
+        .webhook-repo {
+            font-weight: 500;
+            color: #58a6ff;
+        }
+        
+        .webhook-sender {
+            font-size: 0.875rem;
+            color: #8b949e;
+        }
+        
+        .webhook-time {
+            font-size: 0.875rem;
+            color: #8b949e;
+        }
+        
+        .verified-badge {
+            color: #2ea043;
+            font-size: 1.2rem;
+        }
+        
+        .unverified-badge {
+            color: #da3633;
+            font-size: 1.2rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background: #161b22;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 800px;
+            border: 1px solid #30363d;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        
+        .payload-viewer {
+            background: #0d1117;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: #8b949e;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1f6feb;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .delete-btn {
+            background: #da3633;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+        
+        .delete-btn:hover {
+            background: #b22a00;
+        }
+        
+        .webhook-item-clickable {
+            cursor: pointer;
+        }
+        
+        .prompt-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+        
+        .prompt-btn:hover {
+            background: #2ea043;
+        }
+        
+        .no-prompt {
+            color: #8b949e;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        
+        .markdown-content {
+            background: #0d1117;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            border: 1px solid #30363d;
+        }
+        
+        .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+            color: #58a6ff;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .markdown-content h1 { font-size: 1.5rem; }
+        .markdown-content h2 { font-size: 1.3rem; }
+        .markdown-content h3 { font-size: 1.1rem; }
+        .markdown-content h4 { font-size: 1rem; }
+        
+        .markdown-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .markdown-content li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .markdown-content strong {
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        
+        .markdown-content code {
+            background: #21262d;
+            color: #e6edf3;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+        
+        .markdown-content pre {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        .markdown-content pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        .claude-btn {
+            background: #1f6feb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .claude-btn:hover {
+            background: #388bfd;
+        }
+        
+        .claude-btn:disabled {
+            background: #6e7681;
+            cursor: not-allowed;
+        }
+        
+        .secondary-btn {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        
+        .secondary-btn:hover {
+            background: #30363d;
+        }
+        
+        .claude-response {
+            background: #0d1117;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #30363d;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎣 Hook Line Sinker</h1>
+            <div class="subtitle">GitHub Webhook Monitor</div>
+            <div class="webhook-url">Webhook URL: <span id="webhookUrl"></span>/webhook</div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button onclick="showWebhookSetupModal()" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 1rem; background: rgba(31, 111, 235, 0.8); border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; display: inline-block; cursor: pointer; transition: background 0.2s;">
+                    ⚙️ Setup GitHub Webhook
+                </button>
+                <a href="/events" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 1rem; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 0.25rem; display: inline-block;">
+                    📚 GitHub Events Reference
+                </a>
+                <a href="/prompts" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 1rem; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 0.25rem; display: inline-block;">
+                    🤖 Prompt Management
+                </a>
+                <a href="/api-docs" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 1rem; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 0.25rem; display: inline-block;">
+                    🔗 API Documentation
+                </a>
+            </div>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalWebhooks">0</div>
+                <div>Total Webhooks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="verifiedCount">0</div>
+                <div>Verified</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayCount">0</div>
+                <div>Today</div>
+            </div>
+        </div>
+        
+        <div class="webhook-list" id="webhookList">
+            <div class="empty-state">
+                <h3>No webhooks received yet</h3>
+                <p>Configure your GitHub repository to send webhooks to the URL above</p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="loadWebhooks()" title="Refresh">
+        🔄
+    </button>
+    
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Webhook Details</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Set webhook URL - use external URL if on production
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const webhookUrl = isProduction ? 'https://hls.zpaper.com' : window.location.origin;
+        document.getElementById('webhookUrl').textContent = webhookUrl;
+        
+        let webhooks = [];
+        
+        async function loadWebhooks() {
+            try {
+                const response = await fetch('/api/webhooks');
+                webhooks = await response.json();
+                
+                // Load parsed prompts for each webhook
+                for (let webhook of webhooks) {
+                    try {
+                        const promptResponse = await fetch(`/api/parsed-prompts?webhook_id=${webhook.id}&limit=1`);
+                        const prompts = await promptResponse.json();
+                        webhook.parsedPrompt = prompts.length > 0 ? prompts[0] : null;
+                    } catch (err) {
+                        webhook.parsedPrompt = null;
+                    }
+                }
+                
+                renderWebhooks();
+                updateStats();
+            } catch (err) {
+                console.error('Failed to load webhooks:', err);
+            }
+        }
+        
+        function renderWebhooks() {
+            const container = document.getElementById('webhookList');
+            
+            if (webhooks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No webhooks received yet</h3>
+                        <p>Configure your GitHub repository to send webhooks to the URL above</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = webhooks.map(webhook => `
+                <div class="webhook-item">
+                    <span class="event-badge ${webhook.event_type}">${webhook.event_type}</span>
+                    <div class="webhook-info webhook-item-clickable" onclick="showDetails(${webhook.id})">
+                        <div class="webhook-repo">${webhook.repository}</div>
+                        <div class="webhook-sender">by ${webhook.sender_login}${webhook.action ? ` • ${webhook.action}` : ''}</div>
+                    </div>
+                    <div class="webhook-time">${formatTime(webhook.timestamp)}</div>
+                    <div class="${webhook.verified ? 'verified-badge' : 'unverified-badge'}">
+                        ${webhook.verified ? '✓' : '✗'}
+                    </div>
+                    ${webhook.parsedPrompt ? `
+                        <button class="prompt-btn" onclick="showParsedPrompt(${webhook.parsedPrompt.id})" title="View Parsed Prompt">
+                            🤖
+                        </button>
+                    ` : `
+                        <div class="no-prompt" title="No prompt template found">—</div>
+                    `}
+                    <button class="delete-btn" onclick="deleteWebhook(${webhook.id})" title="Delete webhook">
+                        🗑️
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function updateStats() {
+            document.getElementById('totalWebhooks').textContent = webhooks.length;
+            
+            const verified = webhooks.filter(w => w.verified).length;
+            document.getElementById('verifiedCount').textContent = verified;
+            
+            const today = new Date().toDateString();
+            const todayWebhooks = webhooks.filter(w => 
+                new Date(w.timestamp).toDateString() === today
+            ).length;
+            document.getElementById('todayCount').textContent = todayWebhooks;
+        }
+        
+        async function showDetails(id) {
+            try {
+                const response = await fetch(`/api/webhooks/${id}`);
+                const webhook = await response.json();
+                
+                // Extract GitHub links from the webhook payload
+                const githubLinks = extractGitHubLinks(webhook.payload, webhook.event_type);
+                
+                document.getElementById('modalTitle').textContent = 
+                    `${webhook.event_type} Event - ${webhook.repository}`;
+                
+                document.getElementById('modalBody').innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Repository:</strong> <a href="https://github.com/${webhook.repository}" target="_blank" style="color: #58a6ff;">${webhook.repository}</a><br>
+                        <strong>Delivery ID:</strong> ${webhook.delivery_id}<br>
+                        <strong>Timestamp:</strong> ${new Date(webhook.timestamp).toLocaleString()}<br>
+                        <strong>Sender:</strong> ${webhook.sender_login} (ID: ${webhook.sender_id})<br>
+                        <strong>Signature Verified:</strong> ${webhook.verified ? '✓ Yes' : '✗ No'}<br>
+                        ${webhook.action ? `<strong>Action:</strong> ${webhook.action}<br>` : ''}
+                        ${githubLinks ? '<strong>GitHub Links:</strong> ' + githubLinks + '<br>' : ''}
+                        <strong>Raw Payload:</strong> <a href="/api/webhooks/${webhook.id}/payload" target="_blank" style="color: #58a6ff;">View Raw JSON</a>
+                    </div>
+                    <h3>Complete Event Payload</h3>
+                    <div class="payload-viewer">
+                        <pre>${JSON.stringify(webhook.payload, null, 2)}</pre>
+                    </div>
+                `;
+                
+                document.getElementById('detailModal').style.display = 'block';
+            } catch (err) {
+                console.error('Failed to load webhook details:', err);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        async function showParsedPrompt(promptId) {
+            try {
+                const response = await fetch(`/api/parsed-prompts/${promptId}`);
+                const parsedPrompt = await response.json();
+                
+                // Check if there's an existing Claude response
+                const claudeResponse = await fetch(`/api/claude-responses/${promptId}`);
+                const existingResponse = claudeResponse.ok ? await claudeResponse.json() : null;
+                
+                document.getElementById('modalTitle').textContent = 
+                    `Parsed Prompt - ${parsedPrompt.event_type} • ${parsedPrompt.repository}`;
+                
+                // Parse payload to extract GitHub links
+                const payload = JSON.parse(parsedPrompt.payload);
+                const githubLinks = extractGitHubLinks(payload, parsedPrompt.event_type);
+                
+                document.getElementById('modalBody').innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Repository:</strong> <a href="https://github.com/${parsedPrompt.repository}" target="_blank" style="color: #58a6ff;">${parsedPrompt.repository}</a><br>
+                        <strong>Event Type:</strong> ${parsedPrompt.event_type}<br>
+                        <strong>Created:</strong> ${new Date(parsedPrompt.created_at).toLocaleString()}<br>
+                        <strong>Webhook ID:</strong> ${parsedPrompt.webhook_id}<br>
+                        <strong>Delivery ID:</strong> ${parsedPrompt.delivery_id}
+                        ${githubLinks ? '<br><strong>GitHub Links:</strong> ' + githubLinks : ''}
+                    </div>
+                    <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+                        <button id="sendToClaudeBtn" onclick="sendToClaude(${parsedPrompt.id})" class="claude-btn">
+                            🤖 Send to Claude
+                        </button>
+                        <button id="viewResponseBtn" onclick="viewExistingResponse(${parsedPrompt.id})" class="secondary-btn" style="display: none;">
+                            👁️ View Last Response
+                        </button>
+                        <div id="claudeStatus" style="color: #8b949e; font-size: 0.9rem;"></div>
+                    </div>
+                    <div id="promptSection">
+                        <h3>Parsed Prompt Content</h3>
+                        <div class="markdown-content" id="markdownContent"></div>
+                        <div style="margin-top: 1rem;">
+                            <h4>Original Template</h4>
+                            <div class="payload-viewer" style="max-height: 200px; overflow-y: auto;">
+                                <pre>${parsedPrompt.prompt_template}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="claudeResponseSection" style="display: none;">
+                        <h3>Claude Response</h3>
+                        <div class="claude-response" id="claudeResponse"></div>
+                        <button onclick="showPromptContent()" class="secondary-btn" style="margin-top: 1rem;">
+                            ← Back to Prompt
+                        </button>
+                    </div>
+                `;
+                
+                // Render markdown content
+                renderMarkdown(parsedPrompt.parsed_content, 'markdownContent');
+                
+                // Store current prompt ID for later use
+                window.currentPromptId = promptId;
+                window.currentExistingResponse = existingResponse;
+                
+                // Show/hide buttons based on existing Claude response
+                if (existingResponse) {
+                    document.getElementById('viewResponseBtn').style.display = 'block';
+                    document.getElementById('claudeStatus').textContent = `Last response: ${new Date(existingResponse.created_at).toLocaleString()} (${existingResponse.execution_time}ms)`;
+                } else {
+                    document.getElementById('viewResponseBtn').style.display = 'none';
+                    document.getElementById('claudeStatus').textContent = '';
+                }
+                
+                document.getElementById('detailModal').style.display = 'block';
+            } catch (err) {
+                console.error('Failed to load parsed prompt:', err);
+                alert('Failed to load parsed prompt');
+            }
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            
+            return date.toLocaleDateString();
+        }
+        
+        function extractGitHubLinks(payload, eventType) {
+            const links = [];
+            
+            try {
+                // Issue events
+                if (payload.issue) {
+                    links.push('<a href="' + payload.issue.html_url + '" target="_blank" style="color: #58a6ff;">Issue #' + payload.issue.number + '</a>');
+                }
+                
+                // Pull request events
+                if (payload.pull_request) {
+                    links.push('<a href="' + payload.pull_request.html_url + '" target="_blank" style="color: #58a6ff;">PR #' + payload.pull_request.number + '</a>');
+                }
+                
+                // Comment events (issue comments, PR comments, review comments)
+                if (payload.comment && payload.comment.html_url) {
+                    links.push('<a href="' + payload.comment.html_url + '" target="_blank" style="color: #58a6ff;">Comment</a>');
+                }
+                
+                // Release events
+                if (payload.release) {
+                    links.push('<a href="' + payload.release.html_url + '" target="_blank" style="color: #58a6ff;">Release ' + payload.release.tag_name + '</a>');
+                }
+                
+                // Push events - link to commit or compare view
+                if (eventType === 'push' && payload.head_commit) {
+                    const commitUrl = 'https://github.com/' + payload.repository.full_name + '/commit/' + payload.head_commit.id;
+                    links.push('<a href="' + commitUrl + '" target="_blank" style="color: #58a6ff;">Commit ' + payload.head_commit.id.substring(0, 7) + '</a>');
+                    
+                    if (payload.compare) {
+                        links.push('<a href="' + payload.compare + '" target="_blank" style="color: #58a6ff;">Compare View</a>');
+                    }
+                }
+                
+                // Workflow run events
+                if (payload.workflow_run) {
+                    links.push('<a href="' + payload.workflow_run.html_url + '" target="_blank" style="color: #58a6ff;">Workflow Run</a>');
+                }
+                
+                // Check run/suite events
+                if (payload.check_run) {
+                    links.push('<a href="' + payload.check_run.html_url + '" target="_blank" style="color: #58a6ff;">Check Run</a>');
+                }
+                if (payload.check_suite) {
+                    const checkUrl = 'https://github.com/' + payload.repository.full_name + '/commit/' + payload.check_suite.head_sha + '/checks';
+                    links.push('<a href="' + checkUrl + '" target="_blank" style="color: #58a6ff;">Check Suite</a>');
+                }
+                
+                // Branch/tag creation/deletion
+                if (eventType === 'create' || eventType === 'delete') {
+                    if (payload.ref_type === 'branch') {
+                        const branchUrl = 'https://github.com/' + payload.repository.full_name + '/tree/' + payload.ref;
+                        links.push('<a href="' + branchUrl + '" target="_blank" style="color: #58a6ff;">Branch ' + payload.ref + '</a>');
+                    } else if (payload.ref_type === 'tag') {
+                        const tagUrl = 'https://github.com/' + payload.repository.full_name + '/releases/tag/' + payload.ref;
+                        links.push('<a href="' + tagUrl + '" target="_blank" style="color: #58a6ff;">Tag ' + payload.ref + '</a>');
+                    }
+                }
+                
+                // Deployment events
+                if (payload.deployment) {
+                    const deployUrl = 'https://github.com/' + payload.repository.full_name + '/deployments';
+                    links.push('<a href="' + deployUrl + '" target="_blank" style="color: #58a6ff;">Deployment</a>');
+                }
+                
+                // Fork events
+                if (payload.forkee) {
+                    links.push('<a href="' + payload.forkee.html_url + '" target="_blank" style="color: #58a6ff;">Fork: ' + payload.forkee.full_name + '</a>');
+                }
+                
+            } catch (err) {
+                console.error('Error extracting GitHub links:', err);
+            }
+            
+            return links.length > 0 ? links.join(' • ') : null;
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Load webhooks on page load
+        loadWebhooks();
+        
+        // Delete webhook function
+        async function deleteWebhook(id) {
+            if (!confirm('Are you sure you want to delete this webhook?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/webhooks/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadWebhooks(); // Refresh the list
+                } else {
+                    const error = await response.json();
+                    alert('Failed to delete webhook: ' + error.error);
+                }
+            } catch (err) {
+                console.error('Failed to delete webhook:', err);
+                alert('Failed to delete webhook');
+            }
+        }
+        
+        // Auto-refresh every 10 seconds
+        setInterval(loadWebhooks, 10000);
+        
+        // Markdown rendering function
+        function renderMarkdown(markdown, targetElementId) {
+            const html = marked.parse(markdown);
+            document.getElementById(targetElementId).innerHTML = html;
+            
+            // Apply syntax highlighting to code blocks
+            document.querySelectorAll('#' + targetElementId + ' pre code').forEach(block => {
+                Prism.highlightElement(block);
+            });
+        }
+        
+        // Send parsed prompt to Claude
+        async function sendToClaude(promptId) {
+            const btn = document.getElementById('sendToClaudeBtn');
+            const status = document.getElementById('claudeStatus');
+            
+            // Disable button and show loading state
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Sending to Claude...';
+            status.textContent = 'Executing claude -p command...';
+            
+            try {
+                const response = await fetch(`/api/claude-execute/${promptId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show Claude response
+                    document.getElementById('promptSection').style.display = 'none';
+                    document.getElementById('claudeResponseSection').style.display = 'block';
+                    document.getElementById('claudeResponse').textContent = result.output;
+                    
+                    // Update modal title
+                    document.getElementById('modalTitle').textContent = 'Claude Response - ' + result.repository + ' • ' + result.event_type;
+                    
+                    status.textContent = `Completed in ${result.execution_time}ms`;
+                    
+                    // Enable "View Last Response" button for future use
+                    document.getElementById('viewResponseBtn').style.display = 'block';
+                    
+                    // Update stored response data
+                    window.currentExistingResponse = {
+                        created_at: new Date().toISOString(),
+                        execution_time: result.execution_time
+                    };
+                } else {
+                    throw new Error(result.error || 'Failed to execute Claude');
+                }
+            } catch (error) {
+                console.error('Failed to send to Claude:', error);
+                status.textContent = 'Error: ' + error.message;
+                status.style.color = '#f85149';
+            } finally {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '🤖 Send to Claude';
+            }
+        }
+        
+        // View existing Claude response
+        async function viewExistingResponse(promptId) {
+            try {
+                const response = await fetch(`/api/claude-responses/${promptId}`);
+                const claudeResponse = await response.json();
+                
+                if (response.ok) {
+                    // Get prompt info for title
+                    const promptResponse = await fetch(`/api/parsed-prompts/${promptId}`);
+                    const promptInfo = await promptResponse.json();
+                    
+                    // Show Claude response section
+                    document.getElementById('promptSection').style.display = 'none';
+                    document.getElementById('claudeResponseSection').style.display = 'block';
+                    document.getElementById('claudeResponse').textContent = claudeResponse.response_content;
+                    
+                    // Update modal title
+                    document.getElementById('modalTitle').textContent = `Claude Response - ${promptInfo.event_type} • ${promptInfo.repository}`;
+                    
+                    // Update status
+                    const status = document.getElementById('claudeStatus');
+                    status.textContent = `Executed: ${new Date(claudeResponse.created_at).toLocaleString()} (${claudeResponse.execution_time}ms)`;
+                    status.style.color = '#8b949e';
+                } else {
+                    throw new Error(claudeResponse.error || 'Failed to load Claude response');
+                }
+            } catch (error) {
+                console.error('Failed to load Claude response:', error);
+                const status = document.getElementById('claudeStatus');
+                status.textContent = 'Error: ' + error.message;
+                status.style.color = '#f85149';
+            }
+        }
+        
+        // Show prompt content (back from Claude response)
+        function showPromptContent() {
+            document.getElementById('claudeResponseSection').style.display = 'none';
+            document.getElementById('promptSection').style.display = 'block';
+            
+            // Reset modal title (get from current modal state)
+            const title = document.getElementById('modalTitle').textContent;
+            if (title.startsWith('Claude Response - ')) {
+                document.getElementById('modalTitle').textContent = title.replace('Claude Response - ', 'Parsed Prompt - ');
+            }
+            
+            // Restore original status (check if there's an existing response)
+            const status = document.getElementById('claudeStatus');
+            if (window.currentExistingResponse) {
+                status.textContent = `Last response: ${new Date(window.currentExistingResponse.created_at).toLocaleString()} (${window.currentExistingResponse.execution_time}ms)`;
+            } else {
+                status.textContent = '';
+            }
+            status.style.color = '#8b949e';
+        }
+
+        // Webhook setup modal functions
+        function showWebhookSetupModal() {
+            document.getElementById('webhookSetupModal').style.display = 'block';
+        }
+
+        function closeWebhookSetupModal() {
+            document.getElementById('webhookSetupModal').style.display = 'none';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary success feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#2ea043';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#1f6feb';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('webhookSetupModal');
+            const detailModal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                closeWebhookSetupModal();
+            }
+            if (event.target === detailModal) {
+                closeModal();
+            }
+        }
+    </script>
+
+    <!-- Webhook Setup Modal -->
+    <div id="webhookSetupModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>⚙️ GitHub Webhook Setup Guide</h2>
+                <button class="close-btn" onclick="closeWebhookSetupModal()">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+                <h3>📋 Quick Setup</h3>
+                <div style="background: #0d1117; padding: 1rem; border-radius: 0.5rem; border: 1px solid #30363d; margin-bottom: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Webhook URL:</strong>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+                            <code style="background: #21262d; padding: 0.5rem; border-radius: 0.25rem; flex: 1;">https://hls.zpaper.com/webhook</code>
+                            <button onclick="copyToClipboard('https://hls.zpaper.com/webhook')" style="background: #1f6feb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.875rem;">Copy URL</button>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Webhook Secret:</strong>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+                            <code style="background: #21262d; padding: 0.5rem; border-radius: 0.25rem; flex: 1; font-size: 0.75rem;">0eafeebff81353f861742e1391ba371f045d1fbc586f9033f8e789954c7c9733</code>
+                            <button onclick="copyToClipboard('0eafeebff81353f861742e1391ba371f045d1fbc586f9033f8e789954c7c9733')" style="background: #1f6feb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.875rem;">Copy Secret</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3>🏢 Organization-Level Webhook (Recommended)</h3>
+                <div style="background: rgba(31, 111, 235, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(31, 111, 235, 0.3); margin-bottom: 1rem;">
+                    <p style="margin: 0; color: #58a6ff;"><strong>Best for:</strong> clidecoder and shawn-storie organizations - covers ALL repositories automatically</p>
+                </div>
+                <ol style="margin-left: 1.5rem;">
+                    <li>Go to your GitHub organization page</li>
+                    <li>Click <strong>Settings</strong> → <strong>Webhooks</strong></li>
+                    <li>Click <strong>Add webhook</strong></li>
+                    <li>Configure the webhook:
+                        <ul style="margin-top: 0.5rem;">
+                            <li><strong>Payload URL:</strong> <code>https://hls.zpaper.com/webhook</code></li>
+                            <li><strong>Content type:</strong> <code>application/json</code></li>
+                            <li><strong>Secret:</strong> Use the secret above</li>
+                            <li><strong>Which events:</strong> Select "Send me everything"</li>
+                            <li><strong>Active:</strong> ✅ Checked</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Add webhook</strong></li>
+                </ol>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3>📁 Repository-Level Webhook</h3>
+                <div style="background: rgba(255, 212, 0, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(255, 212, 0, 0.3); margin-bottom: 1rem;">
+                    <p style="margin: 0; color: #f0c040;"><strong>Use when:</strong> You want to monitor specific repositories only</p>
+                </div>
+                <ol style="margin-left: 1.5rem;">
+                    <li>Go to your repository on GitHub</li>
+                    <li>Click <strong>Settings</strong> → <strong>Webhooks</strong></li>
+                    <li>Click <strong>Add webhook</strong></li>
+                    <li>Use the same configuration as above</li>
+                </ol>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3>🤖 What Happens Next?</h3>
+                <div style="background: #0d1117; padding: 1rem; border-radius: 0.5rem; border: 1px solid #30363d;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div>
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚡</div>
+                            <strong>Instant Processing</strong>
+                            <div style="font-size: 0.875rem; color: #8b949e;">All GitHub events are captured in real-time</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🤖</div>
+                            <strong>Claude Auto-Analysis</strong>
+                            <div style="font-size: 0.875rem; color: #8b949e;">Every event triggers Claude AI analysis</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔄</div>
+                            <strong>GitHub Actions</strong>
+                            <div style="font-size: 0.875rem; color: #8b949e;">Automated labels, assignments, comments</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</div>
+                            <strong>Web Dashboard</strong>
+                            <div style="font-size: 0.875rem; color: #8b949e;">Monitor all activity from this interface</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <h3>🔧 Troubleshooting</h3>
+                <details style="background: #0d1117; padding: 1rem; border-radius: 0.5rem; border: 1px solid #30363d;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #58a6ff;">Common Issues & Solutions</summary>
+                    <div style="margin-top: 1rem;">
+                        <p><strong>Webhook not receiving events:</strong></p>
+                        <ul>
+                            <li>Check webhook delivery history in GitHub settings</li>
+                            <li>Verify the URL is exactly: <code>https://hls.zpaper.com/webhook</code></li>
+                            <li>Ensure "application/json" content type is selected</li>
+                        </ul>
+                        
+                        <p><strong>Signature verification failing:</strong></p>
+                        <ul>
+                            <li>Double-check the webhook secret matches exactly</li>
+                            <li>Make sure there are no extra spaces in the secret</li>
+                        </ul>
+                        
+                        <p><strong>Events not appearing:</strong></p>
+                        <ul>
+                            <li>Check that "Send me everything" is selected</li>
+                            <li>Or manually select specific events like "Issues", "Pull requests", "Pushes"</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <div style="text-align: center; padding: 1rem; background: rgba(46, 160, 67, 0.1); border-radius: 0.5rem; border: 1px solid rgba(46, 160, 67, 0.3);">
+                <p style="margin: 0; color: #2ea043;"><strong>✅ Ready to go!</strong> After setting up your webhook, all GitHub events will be automatically processed with Claude AI analysis.</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

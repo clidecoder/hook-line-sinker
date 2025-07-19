@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'hls',
-    script: 'hls.js',
+    script: 'app.js',
     instances: 1,
     exec_mode: 'fork',
     watch: false,

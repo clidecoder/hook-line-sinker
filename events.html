@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Events Reference - Hook Line Sinker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+            border-radius: 1rem;
+            box-shadow: 0 8px 24px rgba(31, 111, 235, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+        
+        .back-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        
+        .back-link:hover {
+            color: white;
+        }
+        
+        .event-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .event-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+        
+        .event-card:hover {
+            border-color: #58a6ff;
+        }
+        
+        .event-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .event-description {
+            color: #8b949e;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .event-actions {
+            margin-bottom: 1rem;
+        }
+        
+        .action-title {
+            font-weight: 500;
+            color: #c9d1d9;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-list {
+            list-style: none;
+            margin-left: 1rem;
+        }
+        
+        .action-list li {
+            color: #7c3aed;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .action-list li:before {
+            content: "•";
+            color: #58a6ff;
+            margin-right: 0.5rem;
+        }
+        
+        .payload-info {
+            background: #0d1117;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            color: #7c3aed;
+            border-left: 3px solid #58a6ff;
+        }
+        
+        .search-box {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 2rem;
+            padding: 0.75rem;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            color: #c9d1d9;
+            font-size: 1rem;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">← Back to Hook Line Sinker</a>
+            <h1>GitHub Events Reference</h1>
+            <p>Complete guide to GitHub webhook events and their payloads</p>
+        </header>
+        
+        <input type="text" class="search-box" placeholder="Search events..." id="searchBox">
+        
+        <div class="event-grid" id="eventGrid">
+            <div class="event-card">
+                <div class="event-name">push</div>
+                <div class="event-description">Triggered when commits are pushed to a repository</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: commits, pusher, before/after SHAs, ref</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">pull_request</div>
+                <div class="event-description">Activity on pull requests</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>opened, closed, reopened</li>
+                        <li>edited, assigned, unassigned</li>
+                        <li>review_requested, review_request_removed</li>
+                        <li>labeled, unlabeled</li>
+                        <li>synchronized (new commits)</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: pull_request object, changes, requested_reviewers</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">issues</div>
+                <div class="event-description">Activity on repository issues</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>opened, closed, reopened</li>
+                        <li>edited, assigned, unassigned</li>
+                        <li>labeled, unlabeled</li>
+                        <li>milestoned, demilestoned</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: issue object, changes, assignee</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">issue_comment</div>
+                <div class="event-description">Comments on issues and pull requests</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created, edited, deleted</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: comment object, issue object</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">release</div>
+                <div class="event-description">Repository releases</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>published, unpublished</li>
+                        <li>created, edited, deleted</li>
+                        <li>prereleased, released</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: release object, assets</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">create</div>
+                <div class="event-description">Branch or tag creation</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: ref, ref_type (branch/tag), master_branch</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">delete</div>
+                <div class="event-description">Branch or tag deletion</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: ref, ref_type (branch/tag)</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">watch</div>
+                <div class="event-description">Repository starring</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>started (starred)</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: sender who starred</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">fork</div>
+                <div class="event-description">Repository forking</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: forkee (new repository)</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">gollum</div>
+                <div class="event-description">Wiki page updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: pages array with changes</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">commit_comment</div>
+                <div class="event-description">Comments on commits</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: comment object, commit SHA</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">deployment</div>
+                <div class="event-description">Deployment creation</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: deployment object, environment</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">deployment_status</div>
+                <div class="event-description">Deployment status updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: deployment_status, deployment, target_url</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">check_run</div>
+                <div class="event-description">Check runs from GitHub Apps</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created, completed</li>
+                        <li>rerequested, requested_action</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: check_run object, conclusion, output</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">check_suite</div>
+                <div class="event-description">Check suite updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>completed, requested</li>
+                        <li>rerequested</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: check_suite object, pull_requests</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">status</div>
+                <div class="event-description">Commit status updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: state, description, target_url, context</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">repository</div>
+                <div class="event-description">Repository management</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created, deleted, archived</li>
+                        <li>unarchived, publicized, privatized</li>
+                        <li>edited, renamed, transferred</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: repository changes, before/after values</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">projects_v2</div>
+                <div class="event-description">GitHub Projects (Beta) updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created, edited, deleted</li>
+                        <li>closed, reopened</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: projects_v2 object, organization</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">projects_v2_item</div>
+                <div class="event-description">GitHub Projects (Beta) item updates</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>created, edited, deleted</li>
+                        <li>converted, reordered</li>
+                        <li>archived, restored</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: projects_v2_item, changes</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">ping</div>
+                <div class="event-description">Webhook test/verification</div>
+                <div class="event-actions">
+                    <div class="action-title">Always triggered (no actions)</div>
+                </div>
+                <div class="payload-info">Contains: zen message, webhook config</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">workflow_run</div>
+                <div class="event-description">GitHub Actions workflow execution</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>completed, requested</li>
+                        <li>in_progress</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: workflow_run, conclusion, artifacts_url</div>
+            </div>
+            
+            <div class="event-card">
+                <div class="event-name">workflow_job</div>
+                <div class="event-description">GitHub Actions job execution</div>
+                <div class="event-actions">
+                    <div class="action-title">Actions:</div>
+                    <ul class="action-list">
+                        <li>queued, in_progress</li>
+                        <li>completed</li>
+                    </ul>
+                </div>
+                <div class="payload-info">Contains: workflow_job, steps, conclusion</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const searchBox = document.getElementById('searchBox');
+        const eventGrid = document.getElementById('eventGrid');
+        const eventCards = eventGrid.querySelectorAll('.event-card');
+        
+        searchBox.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            eventCards.forEach(card => {
+                const eventName = card.querySelector('.event-name').textContent.toLowerCase();
+                const eventDescription = card.querySelector('.event-description').textContent.toLowerCase();
+                const actions = card.querySelector('.action-list');
+                const actionText = actions ? actions.textContent.toLowerCase() : '';
+                
+                if (eventName.includes(searchTerm) || 
+                    eventDescription.includes(searchTerm) || 
+                    actionText.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

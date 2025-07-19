@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Management - Hook Line Sinker</title>
+    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .back-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            overflow-y: auto;
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .toolbar {
+            background: #21262d;
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .toolbar select, .toolbar input, .toolbar button {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        
+        .toolbar button {
+            background: #238636;
+            cursor: pointer;
+        }
+        
+        .toolbar button:hover {
+            background: #2ea043;
+        }
+        
+        .toolbar .delete-btn {
+            background: #da3633;
+        }
+        
+        .toolbar .delete-btn:hover {
+            background: #b22a00;
+        }
+        
+        .editor {
+            flex: 1;
+        }
+        
+        .prompt-list {
+            padding: 1rem;
+        }
+        
+        .prompt-group {
+            margin-bottom: 1rem;
+        }
+        
+        .prompt-group h3 {
+            color: #58a6ff;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .prompt-item {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .prompt-item:hover {
+            border-color: #58a6ff;
+        }
+        
+        .prompt-item.active {
+            border-color: #238636;
+            background: rgba(35, 134, 54, 0.1);
+        }
+        
+        .prompt-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .prompt-type {
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        
+        .config-section {
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 1rem;
+        }
+        
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .config-row label {
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        
+        .status-enabled {
+            background: #2ea043;
+        }
+        
+        .status-disabled {
+            background: #da3633;
+        }
+        
+        .repo-selector {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="back-link">← Back to Hook Line Sinker</a>
+        <h1>🤖 Prompt Management</h1>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="prompt-list">
+                <div class="prompt-group">
+                    <h3>Generic Prompts</h3>
+                    <div id="genericPrompts"></div>
+                </div>
+                
+                <div class="prompt-group">
+                    <h3>Repository Specific</h3>
+                    <div id="repoPrompts"></div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <div class="config-row">
+                    <label>Auto Execute:</label>
+                    <input type="checkbox" id="autoExecute">
+                </div>
+                <div class="config-row">
+                    <label>@clide Tag Only:</label>
+                    <input type="checkbox" id="clideTagOnly" checked>
+                </div>
+                <div class="config-row">
+                    <label>Repository:</label>
+                    <select id="repoSelector" class="repo-selector">
+                        <option value="">Select Repository...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-container">
+            <div class="toolbar">
+                <select id="eventTypeSelect">
+                    <option value="">Select Event Type...</option>
+                    <option value="push">push</option>
+                    <option value="pull_request">pull_request</option>
+                    <option value="issues">issues</option>
+                    <option value="issue_comment">issue_comment</option>
+                    <option value="release">release</option>
+                    <option value="create">create</option>
+                    <option value="delete">delete</option>
+                    <option value="watch">watch</option>
+                    <option value="fork">fork</option>
+                    <option value="gollum">gollum</option>
+                    <option value="commit_comment">commit_comment</option>
+                    <option value="deployment">deployment</option>
+                    <option value="deployment_status">deployment_status</option>
+                    <option value="check_run">check_run</option>
+                    <option value="check_suite">check_suite</option>
+                    <option value="status">status</option>
+                    <option value="repository">repository</option>
+                    <option value="projects_v2">projects_v2</option>
+                    <option value="projects_v2_item">projects_v2_item</option>
+                    <option value="ping">ping</option>
+                    <option value="workflow_run">workflow_run</option>
+                    <option value="workflow_job">workflow_job</option>
+                </select>
+                <input type="text" id="promptName" placeholder="Prompt name..." style="flex: 1;">
+                <button id="saveBtn">Save Prompt</button>
+                <button id="deleteBtn" class="delete-btn">Delete</button>
+                <span id="statusIndicator"></span>
+            </div>
+            
+            <div id="editor" class="editor"></div>
+        </div>
+    </div>
+    
+    <script>
+        let editor;
+        let currentPrompt = null;
+        let prompts = { generic: {}, repos: {} };
+        
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@latest/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '# Select or create a prompt\\n\\nUse Handlebars syntax for templating:\\n- {{repository.full_name}}\\n- {{action}}\\n- {{sender.login}}\\n- {{payload}}',
+                language: 'markdown',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                wordWrap: 'on'
+            });
+            
+            loadPrompts();
+            loadRepositories();
+        });
+        
+        // Load prompts from server
+        async function loadPrompts() {
+            try {
+                const response = await fetch('/api/prompts');
+                prompts = await response.json();
+                renderPromptList();
+            } catch (err) {
+                console.error('Failed to load prompts:', err);
+            }
+        }
+        
+        // Load repositories from GitHub CLI
+        async function loadRepositories() {
+            try {
+                const response = await fetch('/api/repositories');
+                const repos = await response.json();
+                const select = document.getElementById('repoSelector');
+                repos.forEach(repo => {
+                    const option = document.createElement('option');
+                    option.value = repo;
+                    option.textContent = repo;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Failed to load repositories:', err);
+            }
+        }
+        
+        // Render prompt list
+        function renderPromptList() {
+            const genericContainer = document.getElementById('genericPrompts');
+            const repoContainer = document.getElementById('repoPrompts');
+            
+            // Generic prompts
+            genericContainer.innerHTML = '';
+            Object.entries(prompts.generic).forEach(([eventType, prompt]) => {
+                const item = createPromptItem(eventType, prompt, 'generic');
+                genericContainer.appendChild(item);
+            });
+            
+            // Repository prompts
+            repoContainer.innerHTML = '';
+            Object.entries(prompts.repos).forEach(([repo, events]) => {
+                Object.entries(events).forEach(([eventType, prompt]) => {
+                    const displayName = `${repo}/${eventType}`;
+                    const item = createPromptItem(displayName, prompt, 'repo');
+                    repoContainer.appendChild(item);
+                });
+            });
+        }
+        
+        // Create prompt list item
+        function createPromptItem(name, prompt, type) {
+            const item = document.createElement('div');
+            item.className = 'prompt-item';
+            item.innerHTML = `
+                <div class="prompt-name">${name}</div>
+                <div class="prompt-type">${type === 'generic' ? 'Generic' : 'Repository Specific'}</div>
+            `;
+            
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.prompt-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                loadPrompt(name, type);
+            });
+            
+            return item;
+        }
+        
+        // Load prompt into editor
+        async function loadPrompt(name, type) {
+            try {
+                let url;
+                if (type === 'generic') {
+                    url = `/api/prompts/generic/${name}`;
+                } else {
+                    // For repo prompts, name is in format "owner/repo/eventType"
+                    const parts = name.split('/');
+                    if (parts.length >= 3) {
+                        const owner = parts[0];
+                        const repo = parts[1];
+                        const eventType = parts.slice(2).join('/');
+                        url = `/api/prompts/repo/${encodeURIComponent(owner + '/' + repo)}/${eventType}`;
+                    } else {
+                        // Handle case where name is just "repo/eventType"
+                        const lastSlash = name.lastIndexOf('/');
+                        const repoName = name.substring(0, lastSlash);
+                        const eventType = name.substring(lastSlash + 1);
+                        url = `/api/prompts/repo/${encodeURIComponent(repoName)}/${eventType}`;
+                    }
+                }
+                
+                const response = await fetch(url);
+                const content = await response.text();
+                
+                editor.setValue(content);
+                currentPrompt = { name, type };
+                
+                // Update toolbar
+                if (type === 'generic') {
+                    document.getElementById('eventTypeSelect').value = name;
+                    document.getElementById('promptName').value = name;
+                    document.getElementById('repoSelector').value = '';
+                } else {
+                    const lastSlash = name.lastIndexOf('/');
+                    const repoName = name.substring(0, lastSlash);
+                    const eventType = name.substring(lastSlash + 1);
+                    document.getElementById('eventTypeSelect').value = eventType;
+                    document.getElementById('promptName').value = name; // Show full name for existing prompts
+                    document.getElementById('repoSelector').value = repoName;
+                }
+                
+                updateStatus('Loaded');
+            } catch (err) {
+                console.error('Failed to load prompt:', err);
+                updateStatus('Error loading');
+            }
+        }
+        
+        // Save prompt
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const eventType = document.getElementById('eventTypeSelect').value;
+            const promptName = document.getElementById('promptName').value;
+            const repo = document.getElementById('repoSelector').value;
+            const content = editor.getValue();
+            
+            if (!eventType || !promptName) {
+                alert('Please select event type and enter prompt name');
+                return;
+            }
+            
+            try {
+                let url;
+                if (repo) {
+                    url = `/api/prompts/repo/${encodeURIComponent(repo)}/${eventType}`;
+                } else {
+                    url = `/api/prompts/generic/${eventType}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: content
+                });
+                
+                if (response.ok) {
+                    updateStatus('Saved');
+                    loadPrompts();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Save failed:', errorText);
+                    updateStatus('Save failed');
+                }
+            } catch (err) {
+                console.error('Failed to save prompt:', err);
+                updateStatus('Save error');
+            }
+        });
+        
+        // Delete prompt
+        document.getElementById('deleteBtn').addEventListener('click', async () => {
+            if (!currentPrompt || !confirm('Delete this prompt?')) return;
+            
+            try {
+                const url = currentPrompt.type === 'generic'
+                    ? `/api/prompts/generic/${currentPrompt.name}`
+                    : `/api/prompts/repo/${currentPrompt.name}`;
+                
+                const response = await fetch(url, { method: 'DELETE' });
+                
+                if (response.ok) {
+                    editor.setValue('');
+                    currentPrompt = null;
+                    updateStatus('Deleted');
+                    loadPrompts();
+                } else {
+                    updateStatus('Delete failed');
+                }
+            } catch (err) {
+                console.error('Failed to delete prompt:', err);
+                updateStatus('Delete error');
+            }
+        });
+        
+        // Update status indicator
+        function updateStatus(message) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            setTimeout(() => indicator.textContent = '', 3000);
+        }
+        
+        // Auto-suggest unique prompt name
+        function generateUniquePromptName() {
+            const eventType = document.getElementById('eventTypeSelect').value;
+            const repo = document.getElementById('repoSelector').value;
+            
+            if (!eventType) return '';
+            
+            if (repo) {
+                // For repo-specific prompts, suggest repo-specific name
+                const repoName = repo.split('/')[1] || repo; // Get repo name without owner
+                const baseName = `${repoName}-${eventType}`;
+                
+                // Check if this name already exists in the repo prompts
+                let counter = 1;
+                let suggestedName = baseName;
+                
+                if (prompts.repos[repo] && prompts.repos[repo][eventType]) {
+                    // If the basic eventType exists, suggest a variant
+                    suggestedName = `${baseName}-v${counter}`;
+                    while (checkPromptExists(repo, suggestedName)) {
+                        counter++;
+                        suggestedName = `${baseName}-v${counter}`;
+                    }
+                }
+                
+                return suggestedName;
+            } else {
+                // For generic prompts, just use the event type
+                return eventType;
+            }
+        }
+        
+        // Check if prompt exists
+        function checkPromptExists(repo, promptName) {
+            if (repo) {
+                return prompts.repos[repo] && prompts.repos[repo][promptName];
+            } else {
+                return prompts.generic[promptName];
+            }
+        }
+        
+        // Update prompt name when event type or repo changes
+        function updatePromptName() {
+            if (!currentPrompt) { // Only auto-suggest if not editing existing prompt
+                const suggestedName = generateUniquePromptName();
+                document.getElementById('promptName').value = suggestedName;
+                
+                // Auto-generate template if both event type and name are set
+                const eventType = document.getElementById('eventTypeSelect').value;
+                const repo = document.getElementById('repoSelector').value;
+                
+                if (eventType && suggestedName && editor.getValue().trim() === '') {
+                    generatePromptTemplate(eventType, repo, suggestedName);
+                }
+            }
+        }
+        
+        // Generate appropriate template based on repo and event type
+        function generatePromptTemplate(eventType, repo, promptName) {
+            let repoContext = '';
+            let repoSpecificAnalysis = '';
+            
+            if (repo) {
+                const repoName = repo.split('/')[1] || repo;
+                repoContext = `
+### ${repoName} Context:
+This event is from the ${repo} repository.`;
+                
+                // Add repo-specific analysis suggestions
+                if (repo.includes('patient') || repo.includes('health')) {
+                    repoSpecificAnalysis = `
+### Healthcare Application Analysis:
+1. **HIPAA Compliance**: Any patient data implications?
+2. **Security Assessment**: PHI exposure concerns?
+3. **Workflow Impact**: Effect on healthcare processes?
+4. **Regulatory Considerations**: Compliance requirements?`;
+                } else if (repo.includes('hook') || repo.includes('webhook')) {
+                    repoSpecificAnalysis = `
+### Webhook Tool Analysis:
+1. **Integration Impact**: Effect on webhook processing?
+2. **System Reliability**: Monitoring and alerting needs?
+3. **Performance Considerations**: Scalability implications?
+4. **Security Review**: Webhook security best practices?`;
+                } else {
+                    repoSpecificAnalysis = `
+### Repository-Specific Analysis:
+1. **Project Impact**: How does this affect the project goals?
+2. **Development Workflow**: Integration with current processes?
+3. **Quality Assessment**: Code quality and best practices?
+4. **Deployment Considerations**: Release and deployment impact?`;
+                }
+            }
+            
+            const template = `# ${promptName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Prompt
+
+Analyze the following ${eventType} event:${repoContext}
+
+## Repository: {{repository.full_name}}
+## Action: {{action}}
+## Event Type: ${eventType}
+
+### Event Details:
+{{#if sender}}
+- **Triggered By**: {{sender.login}}
+{{/if}}
+{{#if issue}}
+- **Issue**: #{{issue.number}} - {{issue.title}}
+{{/if}}
+{{#if pull_request}}
+- **Pull Request**: #{{pull_request.number}} - {{pull_request.title}}
+{{/if}}
+{{#if release}}
+- **Release**: {{release.tag_name}} - {{release.name}}
+{{/if}}
+${repoSpecificAnalysis}
+
+### Analysis Request:
+Please analyze this ${eventType} event and provide:
+1. Summary of what happened
+2. Impact assessment
+3. Recommended actions or follow-ups
+4. Any concerns or observations
+
+**@clide Please provide detailed analysis of this event**
+
+**Full Payload:** {{payload}}`;
+            
+            editor.setValue(template);
+        }
+        
+        // Clear current prompt when starting new
+        function clearCurrentPrompt() {
+            currentPrompt = null;
+            document.querySelectorAll('.prompt-item').forEach(i => i.classList.remove('active'));
+        }
+        
+        // Event listeners for auto-suggestion
+        document.getElementById('eventTypeSelect').addEventListener('change', () => {
+            clearCurrentPrompt();
+            updatePromptName();
+        });
+        
+        document.getElementById('repoSelector').addEventListener('change', () => {
+            clearCurrentPrompt();
+            updatePromptName();
+        });
+        
+        // Clear current prompt when clicking in editor (starting to create new)
+        document.getElementById('editor').addEventListener('click', () => {
+            if (!currentPrompt) {
+                updatePromptName();
+            }
+        });
+    </script>
+</body>
+</html>
